@@ -1,15 +1,15 @@
 // src/screens/OcrScreen.tsx
 import React, {useEffect, useState} from 'react';
-import {View, Text, ScrollView, StyleSheet, Button, Alert} from 'react-native';
+import {Text, ScrollView, StyleSheet, Button, Alert} from 'react-native';
 import { TextRecognition } from 'react-native-google-ml-kit';
 import * as RNFS from 'react-native-fs';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 
-type Props = { route: { params: { imagePath: string } } };
+type Props = NativeStackScreenProps<RootStackParamList, 'OcrScreen'>;
 
 function normalizeViText(s: string) {
-  // Gộp dòng, chuẩn hóa Unicode, fix khoảng trắng thừa
-  return s
-    .normalize('NFC')
+  return s.normalize('NFC')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/[ \t]{2,}/g, ' ')
@@ -18,19 +18,13 @@ function normalizeViText(s: string) {
 
 export default function OcrScreen({ route }: Props) {
   const { imagePath } = route.params;
-  const [text, setText] = useState<string>('Đang xử lý...');
+  const [text, setText] = useState('Đang xử lý...');
 
   useEffect(() => {
     (async () => {
       try {
-        // ML Kit hoạt động trực tiếp trên file path
-        const result = await TextRecognition.recognize(imagePath, {
-          // v2 auto detect Latin; không cần chỉ định ngôn ngữ, nhưng bạn có thể thêm tùy chọn khi lib hỗ trợ
-        });
-
-        // result.blocks[].lines[].elements[] … bạn có thể custom gộp theo layout
-        const joined = result?.text ?? '';
-        setText(normalizeViText(joined));
+        const result = await TextRecognition.recognize(imagePath);
+        setText(normalizeViText(result?.text ?? ''));
       } catch (e: any) {
         Alert.alert('Lỗi OCR', e?.message ?? String(e));
         setText('');
@@ -56,8 +50,9 @@ export default function OcrScreen({ route }: Props) {
     </ScrollView>
   );
 }
+
 const styles = StyleSheet.create({
   container: { padding: 16, gap: 12 },
   title: { fontSize: 18, fontWeight: '700' },
-  mono: { fontFamily: 'monospace', fontSize: 15, lineHeight: 22 }
+  mono: { fontFamily: 'monospace', fontSize: 15, lineHeight: 22 },
 });
